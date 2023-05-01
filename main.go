@@ -4,6 +4,7 @@ import (
 	"log"
 	"main/server"
 	"main/server/db"
+	auth "main/server/services/authentication"
 
 	"os"
 
@@ -22,12 +23,10 @@ func main() {
 	connection := db.InitDB()
 	db.Transfer(connection)
 
-	// defer func() {
-		
-	// 	if err := connection.DB().Close(); err != nil {
-	// 		log.Print(err)
-	// 	}
-	// }()
+
+	//twilio
+
+	auth.TwilioInit(os.Getenv("TWILIO_AUTH_TOKEN"))
 
 	app := server.NewServer(connection)
 	server.ConfigureRoutes(app)

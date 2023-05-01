@@ -10,11 +10,11 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-type Claims struct {
-	Id   string `json:"id"`
-	Role string `json:"role"`
-	jwt.RegisteredClaims
-}
+// type Claims struct {
+// 	Id   string `json:"id"`
+// 	Role string `json:"role"`
+// 	jwt.RegisteredClaims
+// }
 
 //Generate JWT Token
 func 	GenerateToken(claims model.Claims, context *gin.Context) string {
@@ -30,8 +30,8 @@ func 	GenerateToken(claims model.Claims, context *gin.Context) string {
 }
 
 //Decode Token function
-func DecodeToken(tokenString string) (Claims, error) {
-	claims := &Claims{}
+func DecodeToken(tokenString string) (model.Claims, error) {
+	claims := &model.Claims{}
 
 	parsedToken, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
