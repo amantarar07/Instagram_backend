@@ -27,7 +27,7 @@ import (
 // 	user.CreateUserService(context, createUser)
 // }
 
-func UserSignupPhone(context *gin.Context){
+func UserSignupPhoneHandler(context *gin.Context){
 
 	utils.SetHeader(context)
 
@@ -44,5 +44,17 @@ func UserSignupPhone(context *gin.Context){
 	auth.SendOtpService(context,request.SendOtpRequest(userPhone))
 	//if otp gets verified only then create the user
 
+
+}
+func UserFullname(context *gin.Context){
+
+	utils.SetHeader(context)
+
+	var userFullName request.FullName
+
+	utils.RequestDecoding(context, &userFullName)
+
+	//call the service 
+	auth.UserFullNameService(context, userFullName)
 
 }

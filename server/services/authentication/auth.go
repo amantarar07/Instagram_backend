@@ -137,7 +137,14 @@ func CheckOtp(to string, code string) bool {
 
 func UserFullNameService(context *gin.Context, fullName request.FullName){
 
-	
+	cookie,_:=context.Request.Cookie("phonenumber")
+	claims,_:=provider.DecodeToken(cookie.Value)
+	claims.FullName=fullName.FullName
+	newtoken:=provider.GenerateToken(claims, context)
+	newcookie:=&http.Cookie{Name:"Fullname",Value:newtoken}
+
+	//newcookie is set with phonenumber +fullname for further routes
+	http.SetCookie(context.Writer,newcookie)
 
 
 }

@@ -13,8 +13,9 @@ func ConfigureRoutes(server *Server) {
 	server.engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 
-	server.engine.POST("/user-signup-phone",handler.UserSignupPhone)
+	server.engine.POST("/user-signup-phone",handler.UserSignupPhoneHandler)
 	server.engine.POST("/verify-phone",handler.VerifyOtpHandler)
+	server.engine.POST("/enter-fullname",handler.UserFullname)
 	
 
 	
