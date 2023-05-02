@@ -22,3 +22,7 @@ type FullName struct{
 
 	FullName string `json:"full_name"`
 }
+type EmailOtp struct{
+
+	Emailotp string `json:"email_otp"`
+}

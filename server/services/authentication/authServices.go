@@ -1,19 +1,21 @@
 package auth
 
 import (
+	"crypto/tls"
 	"fmt"
 	"main/server/db"
-	"main/server/model"
-	"main/server/provider"
 	"main/server/request"
 	"main/server/response"
 	"main/server/utils"
+	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/twilio/twilio-go"
 	openapi "github.com/twilio/twilio-go/rest/verify/v2"
+	gomail "gopkg.in/mail.v2"
 )
 
 var twilioClient *twilio.RestClient
@@ -25,31 +27,7 @@ func TwilioInit(password string) {
 	})
 }
 
-// func AdminRegisterService(context *gin.Context, adminRequest request.RegisterRequest) {
 
-// 	var credential model.Credential
-// 	credential.UserName = adminRequest.Username
-// 	credential.Contact = adminRequest.Contact
-// 	credential.Role = "admin"
-
-// 	if db.RecordExist("credentials", adminRequest.Contact) {
-// 		response.ErrorResponse(context, 400, "Admin already registerd")
-// 		return
-// 	}
-
-// 	if db.RecordExist("users", adminRequest.Contact) {
-// 		response.ErrorResponse(context, 400, "Admin cannot register as user")
-// 		return
-// 	}
-
-// 	err := db.CreateRecord(&credential)
-// 	if err != nil {
-// 		response.ErrorResponse(context, 500, err.Error())
-// 		return
-// 	}
-
-// 	response.Response(context, 200, credential)
-// }
 
 func SendOtpService(context *gin.Context, phoneNumber request.SendOtpRequest) {
 	var exists1 bool
@@ -68,10 +46,10 @@ func SendOtpService(context *gin.Context, phoneNumber request.SendOtpRequest) {
 	fmt.Println("SID is", sid)
 
 	//set cookie of phone number token
-	PhoneClaims:=&model.Claims{Type: "phone_number",PhoneNumber: phoneNumber.PhoneNumber}
 
-	PhoneToken:=provider.GenerateToken(*PhoneClaims,context)
-	cookie:=&http.Cookie{Name: "phonenumber",Value: PhoneToken}
+
+	
+	cookie:=&http.Cookie{Name: "phonenumber",Value: phoneNumber.PhoneNumber}
 	http.SetCookie(context.Writer,cookie)
 	fmt.Println("cookie is set",cookie)
 	
@@ -97,21 +75,24 @@ func sendOtp(to string) (bool, *string) {
 	}
 
 }
-func VerifyOtpService(context *gin.Context, verifyOtp request.VerifyOtpRequest) {
+func VerifyPhoneOtpService(context *gin.Context, verifyOtp request.VerifyOtpRequest) {
 
 //get the phone number from the token(inside cookie)
 
-	cookie,_:=context.Request.Cookie("phonenumber")
-	claims,_:=provider.DecodeToken(cookie.Value)
-
-	fmt.Println("claims",claims)
+	phonecookie,_:=context.Request.Cookie("phonenumber")
 	
-	if CheckOtp("+91"+claims.PhoneNumber, verifyOtp.Otp) {
+	if CheckOtp("+91"+phonecookie.Value,verifyOtp.Otp) {
 		fmt.Println("verification sucess")
 		
-		//redirect to fullname route
+		
+		verifiedPhoneCookie:=&http.Cookie{Name: "verifiedPhoneNumber",Value: phonecookie.Value}
 
-
+		http.SetCookie(context.Writer,verifiedPhoneCookie)
+		fmt.Println("verified cookie set")
+		response.ShowResponse("Success",200,"phoneNumber Verified","",context)
+		
+		//set the cookie with verified number
+		return
 
 	} else {
 		response.ErrorResponse(context, 401, "Verification Failed")
@@ -135,19 +116,76 @@ func CheckOtp(to string, code string) bool {
 	}
 }
 
-func UserFullNameService(context *gin.Context, fullName request.FullName){
 
-	cookie,_:=context.Request.Cookie("phonenumber")
-	claims,_:=provider.DecodeToken(cookie.Value)
-	claims.FullName=fullName.FullName
-	newtoken:=provider.GenerateToken(claims, context)
-	newcookie:=&http.Cookie{Name:"Fullname",Value:newtoken}
+func SendEmailOtpService(context *gin.Context,toEmail string){
 
-	//newcookie is set with phonenumber +fullname for further routes
-	http.SetCookie(context.Writer,newcookie)
+	m := gomail.NewMessage()
 
+	// Set E-Mail sender
+	m.SetHeader("From", "amantarar01@gmail.com")
+  
+	// Set E-Mail receivers
+	m.SetHeader("To", toEmail)
+  
+	// Set E-Mail subject
+	m.SetHeader("Subject", "Instagram Email verification")
+  
+	// Set E-Mail body. You can set plain text or html with text/html
+	otp:=rand.Int()
+	strOtp:= strconv.Itoa(otp)
+	m.SetBody("text/plain",strOtp)
+  
+	// Settings for SMTP server
+	d := gomail.NewDialer("smtp.gmail.com", 587, "amantarar01@gmail.com", "mdyrprmdvxpfxjjp")
+  
+	// This is only needed when SSL/TLS certificate is not valid on server.
+	// In production this should be set to false.
+	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+  
+	// Now send E-Mail
+	if err := d.DialAndSend(m); err != nil {
+	  fmt.Println(err)
+	  panic(err)
+	}
+
+	//set a cookie with hash value of otp
+	hash,_:=utils.HashPassword(strOtp)
+	cookie:=&http.Cookie{Name:"otpHash", Value:hash}
+	http.SetCookie(context.Writer,cookie)
+  
+	return
 
 }
+
+func VerifyEmailOtpService(context *gin.Context,otp string){
+
+	//get the hash from the cookie value
+	otpHashcookie,_:=context.Request.Cookie("otpHash")
+	Emailcookie,_:=context.Request.Cookie("UserEmail")
+
+	
+	if(utils.CheckPasswordHash(otp,otpHashcookie.Value)){
+
+		fmt.Println("email verified successfully")
+		//set the cookie with verified email
+
+		cookie:=&http.Cookie{Name:"verifiedEmail",Value:Emailcookie.Value}
+		http.SetCookie(context.Writer,cookie)
+
+		response.ShowResponse("Success",200,"Email verified successfully","",context)
+
+		return
+
+
+	}else{
+		response.ShowResponse("Forbidden",403,"wrong otp","",context)
+		return 
+	}
+
+	
+}
+
+
 
 // func LogoutService(context *gin.Context, tokenString string) {
 

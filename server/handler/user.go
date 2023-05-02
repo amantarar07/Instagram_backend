@@ -4,8 +4,10 @@ import (
 	"main/server/request"
 	"main/server/response"
 	auth "main/server/services/authentication"
+	"main/server/services/user"
 	"main/server/utils"
 	"main/server/validation"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -46,7 +48,35 @@ func UserSignupPhoneHandler(context *gin.Context){
 
 
 }
-func UserFullname(context *gin.Context){
+
+func UserSignupEmailHandler(context *gin.Context){
+
+	utils.SetHeader(context)
+	
+	var userEmail request.RegisterEmail
+	utils.RequestDecoding(context, &userEmail)
+
+	err := validation.CheckValidation(&userEmail)
+	if err != nil {
+		response.ErrorResponse(context, 400, err.Error())
+		return
+	}
+
+	auth.SendEmailOtpService(context, userEmail.Email)
+
+	//set another cookie for email address
+
+	cookie:=&http.Cookie{Name: "UserEmail", Value:userEmail.Email}
+
+	http.SetCookie(context.Writer,cookie)
+
+
+}
+
+
+
+
+func UserFullnameHandler(context *gin.Context){
 
 	utils.SetHeader(context)
 
@@ -55,6 +85,14 @@ func UserFullname(context *gin.Context){
 	utils.RequestDecoding(context, &userFullName)
 
 	//call the service 
-	auth.UserFullNameService(context, userFullName)
+	user.UserFullNameService(context, userFullName)
 
+	//set the cookie having value of phonenumber/email
+
+}
+
+func InstaUserNameHandler( context *gin.Context){
+
+
+	
 }

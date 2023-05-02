@@ -14,8 +14,12 @@ func ConfigureRoutes(server *Server) {
 
 
 	server.engine.POST("/user-signup-phone",handler.UserSignupPhoneHandler)
-	server.engine.POST("/verify-phone",handler.VerifyOtpHandler)
-	server.engine.POST("/enter-fullname",handler.UserFullname)
+	server.engine.POST("/verify-phone",handler.VerifyPhoneOtpHandler)
+
+	server.engine.POST("/user-signup-email",handler.UserSignupEmailHandler)
+	server.engine.POST("/verify-email",handler.VerifyEmailOtpHandler)
+	
+	server.engine.POST("/enter-fullname",handler.UserFullnameHandler)
 	
 
 	
