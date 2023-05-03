@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"main/server/db"
+	"main/server/model"
 	"main/server/request"
 	"main/server/response"
 	"main/server/utils"
@@ -11,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/twilio/twilio-go"
@@ -45,11 +47,21 @@ func SendOtpService(context *gin.Context, phoneNumber request.SendOtpRequest) {
 	ok, sid := sendOtp("+91" + phoneNumber.PhoneNumber)
 	fmt.Println("SID is", sid)
 
-	//set cookie of phone number token
-
+	var usersession model.UserAuthSessions
+	usersession.PhoneNumber=phoneNumber.PhoneNumber
+	er:=db.CreateRecord(&usersession)
+	if er!=nil{
+		fmt.Println("create record error")
+		response.ErrorResponse(context,500,er.Error())
+	}
 
 	
-	cookie:=&http.Cookie{Name: "phonenumber",Value: phoneNumber.PhoneNumber}
+	db.FindById(&usersession,phoneNumber.PhoneNumber,"phone_number")
+
+
+
+	//set cookie of phone number token	
+	cookie:=&http.Cookie{Name: "sessionID",Value:usersession.SessionId }
 	http.SetCookie(context.Writer,cookie)
 	fmt.Println("cookie is set",cookie)
 	
@@ -58,7 +70,7 @@ func SendOtpService(context *gin.Context, phoneNumber request.SendOtpRequest) {
 	}
 }
 func sendOtp(to string) (bool, *string) {
-	fmt.Println("sahdvasasjfjasfjsaf")
+	fmt.Println("send otp function called")
 	params := &openapi.CreateVerificationParams{}
 	params.SetTo(to)
 
@@ -79,19 +91,23 @@ func VerifyPhoneOtpService(context *gin.Context, verifyOtp request.VerifyOtpRequ
 
 //get the phone number from the token(inside cookie)
 
-	phonecookie,_:=context.Request.Cookie("phonenumber")
-	
-	if CheckOtp("+91"+phonecookie.Value,verifyOtp.Otp) {
+	sessionIdcookie,_:=context.Request.Cookie("sessionID")
+
+	var usersession model.UserAuthSessions
+	db.FindById(&usersession,sessionIdcookie.Value,"session_id")
+	if CheckOtp("+91"+usersession.PhoneNumber,verifyOtp.Otp) {
 		fmt.Println("verification sucess")
 		
 		
-		verifiedPhoneCookie:=&http.Cookie{Name: "verifiedPhoneNumber",Value: phonecookie.Value}
+		// verifiedPhoneCookie:=&http.Cookie{Name: "verifiedPhoneNumber",Value: phonecookie.Value}
 
-		http.SetCookie(context.Writer,verifiedPhoneCookie)
-		fmt.Println("verified cookie set")
+		// http.SetCookie(context.Writer,verifiedPhoneCookie)
+		// fmt.Println("verified cookie set")
+
+		//store this phonenumber in the session table
+		usersession.VerifiedPhoneNumber=usersession.PhoneNumber
+		db.UpdateRecord(&usersession,sessionIdcookie.Value,"session_id")
 		response.ShowResponse("Success",200,"phoneNumber Verified","",context)
-		
-		//set the cookie with verified number
 		return
 
 	} else {
@@ -131,6 +147,7 @@ func SendEmailOtpService(context *gin.Context,toEmail string){
 	m.SetHeader("Subject", "Instagram Email verification")
   
 	// Set E-Mail body. You can set plain text or html with text/html
+	rand.Seed(time.Now().UnixNano())
 	otp:=rand.Int()
 	strOtp:= strconv.Itoa(otp)
 	m.SetBody("text/plain",strOtp)
@@ -148,10 +165,27 @@ func SendEmailOtpService(context *gin.Context,toEmail string){
 	  panic(err)
 	}
 
+	var usersession model.UserAuthSessions
+
+	usersession.Email=toEmail
+	er:=db.CreateRecord(&usersession)
+	if er!=nil{
+		response.ShowResponse("Db ERROR",500,er.Error(),"",context)
+		return
+	}
+	//set a sessionID cookie
+	db.FindById(&usersession,toEmail,"email")
+
+	sessionIdCookie:=&http.Cookie{Name:"sessionID",Value: usersession.SessionId}
+	http.SetCookie(context.Writer,sessionIdCookie)
+	fmt.Println("session cookie is set")
+
 	//set a cookie with hash value of otp
 	hash,_:=utils.HashPassword(strOtp)
 	cookie:=&http.Cookie{Name:"otpHash", Value:hash}
 	http.SetCookie(context.Writer,cookie)
+
+	response.ShowResponse("Success",200,"Code sent on Email","",context)
   
 	return
 
@@ -161,7 +195,7 @@ func VerifyEmailOtpService(context *gin.Context,otp string){
 
 	//get the hash from the cookie value
 	otpHashcookie,_:=context.Request.Cookie("otpHash")
-	Emailcookie,_:=context.Request.Cookie("UserEmail")
+	// Emailcookie,_:=context.Request.Cookie("UserEmail")
 
 	
 	if(utils.CheckPasswordHash(otp,otpHashcookie.Value)){
@@ -169,8 +203,18 @@ func VerifyEmailOtpService(context *gin.Context,otp string){
 		fmt.Println("email verified successfully")
 		//set the cookie with verified email
 
-		cookie:=&http.Cookie{Name:"verifiedEmail",Value:Emailcookie.Value}
-		http.SetCookie(context.Writer,cookie)
+		sessionCookie,_:=context.Request.Cookie("sessionID")
+		var usersession model.UserAuthSessions
+		db.FindById(&usersession,sessionCookie.Value,"session_id")
+		usersession.VerifiedEmail=usersession.Email
+
+		er:=db.UpdateRecord(&usersession,sessionCookie.Value,"session_id").Error
+		if er!=nil{
+			response.ShowResponse("server error",500,er.Error(),"",context)
+			return
+		}
+		// cookie:=&http.Cookie{Name:"verifiedEmail",Value:Emailcookie.Value}
+		// http.SetCookie(context.Writer,cookie)
 
 		response.ShowResponse("Success",200,"Email verified successfully","",context)
 

@@ -11,7 +11,7 @@ func AutoMigrateDatabase(db *gorm.DB) {
 	
 	
 	
-		err := db.AutoMigrate(&model.User{})
+		err := db.AutoMigrate(&model.User{},model.UserAuthSessions{})
 		if err != nil {
 			panic(err)
 		}

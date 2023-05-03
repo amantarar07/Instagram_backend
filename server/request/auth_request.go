@@ -1,7 +1,8 @@
 package request
 
-type AuthRequest struct {
-	Email    string `json:"email" binding:"required,email" example:"user@example.com"`
+type LoginCred struct {
+
+	Login_Input string `json:"login_input"`
 	Password string `json:"password" binding:"required" example:"11111111"`
 }
 
@@ -15,5 +16,8 @@ type VerifyOtpRequest struct{
 	// PhoneNumber string `json:"phonenumber"`
 	Otp    string `json:"otp"`
 }
+
+
+
 
 

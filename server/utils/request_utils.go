@@ -2,10 +2,14 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"main/server/model"
 	"main/server/response"
+	"regexp"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -37,4 +41,28 @@ func HashPassword(password string) (string, error) {
 func CheckPasswordHash(password, hash string) bool {
     err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
     return err == nil
+}
+
+
+func IsEmail(e string) bool {
+    emailRegex := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+    return emailRegex.MatchString(e)
+}
+
+func GenerateToken(claims model.Claims)string{
+
+token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+
+key:="secret"
+ss, err := token.SignedString([]byte(key))
+
+if err!=nil{
+
+	fmt.Println("token not signed successfully")
+}
+
+return ss
+
+
 }

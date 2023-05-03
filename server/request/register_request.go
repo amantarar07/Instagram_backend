@@ -26,3 +26,12 @@ type EmailOtp struct{
 
 	Emailotp string `json:"email_otp"`
 }
+
+type InstaUserName struct{
+
+	InstaUserName string `json:"insta_user_name"`
+}
+type UserPassword struct{
+
+	UserPassword string `json:"user_password"`
+}

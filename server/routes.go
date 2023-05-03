@@ -20,6 +20,12 @@ func ConfigureRoutes(server *Server) {
 	server.engine.POST("/verify-email",handler.VerifyEmailOtpHandler)
 	
 	server.engine.POST("/enter-fullname",handler.UserFullnameHandler)
+
+	server.engine.POST("/enter-user-name",handler.InstaUserNameHandler)
+
+	server.engine.POST("/create-password",handler.CreatePasswordHandler)
+
+	server.engine.POST("/user-login",handler.UserLoginHandler)
 	
 
 	

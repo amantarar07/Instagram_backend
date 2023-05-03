@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"main/server/request"
 	"main/server/response"
 	auth "main/server/services/authentication"
@@ -83,16 +84,67 @@ func UserFullnameHandler(context *gin.Context){
 	var userFullName request.FullName
 
 	utils.RequestDecoding(context, &userFullName)
+	fmt.Println("fullname: " ,userFullName)
 
 	//call the service 
 	user.UserFullNameService(context, userFullName)
 
-	//set the cookie having value of phonenumber/email
 
 }
 
 func InstaUserNameHandler( context *gin.Context){
 
+	utils.SetHeader(context)
+
+	var InstaUserName request.InstaUserName
+	utils.RequestDecoding(context, &InstaUserName)
+
+	//if username already exists throw an error
+	err := validation.CheckValidation(&InstaUserName)
+	if err != nil {
+		response.ErrorResponse(context, 400, err.Error())
+		return
+	}
+
+	user.InstaUsernameService(context, InstaUserName)
+
+
+}
+
+func CreatePasswordHandler(context *gin.Context){
+
+	utils.SetHeader(context)
+
+	var userPassword  request.UserPassword
+	utils.RequestDecoding(context, &userPassword)
+
+		err := validation.CheckValidation(&userPassword)
+	if err != nil {
+		response.ErrorResponse(context, 400, err.Error())
+		return
+	}
+
+	user.CreatePasswordService(context ,userPassword)
+
+
+}
+
+func UserLoginHandler(context *gin.Context){
+
+	utils.SetHeader(context)
+
+	var loginCred request.LoginCred
+	utils.RequestDecoding(context, &loginCred)
+
+	user.UserLoginService(context,loginCred)
+
+
+
+}
+
+func UploadPostHandler(context *gin.Context){
+
+	utils.SetHeader(context)
 
 	
 }
