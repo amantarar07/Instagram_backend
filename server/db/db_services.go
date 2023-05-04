@@ -1,6 +1,8 @@
 package db
 
 import (
+	"fmt"
+
 	"gorm.io/gorm"
 )
 
@@ -61,4 +63,11 @@ func RecordExist(tableName string, phoneNumber string) bool {
 	query := "SELECT EXISTS(SELECT * FROM " + tableName + " WHERE phone_number='" + phoneNumber + "')"
 	db.Raw(query).Scan(&exists)
 	return exists
+}
+
+func InsertIntoArray(data interface{},tableName string){
+	fmt.Printf("data type is:%T",data)
+	fmt.Println("")
+	fmt.Println("data is ",data)
+	//query:="INSERT INTO"+tableName+"VALUES"+"'{"+data+"}'"
 }

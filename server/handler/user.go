@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"main/server/model"
 	"main/server/request"
 	"main/server/response"
 	auth "main/server/services/authentication"
@@ -146,5 +147,39 @@ func UploadPostHandler(context *gin.Context){
 
 	utils.SetHeader(context)
 
+	user.UploadPostService(context)
+
 	
+}
+
+func GetUserPostsHandler(context *gin.Context){
+
+	utils.SetHeader(context)
+	
+	user.GetUserPostService(context)
+	
+
+	
+}
+
+func LikePostHandler(context *gin.Context){
+
+	utils.SetHeader(context)
+
+	var post model.Post
+	utils.RequestDecoding(context,&post)
+
+	user.LikePostService(context,post)
+}
+
+func Comment_on_PostHandler(context *gin.Context){
+
+
+	utils.SetHeader(context)
+
+	var comment request.Comment
+	utils.RequestDecoding(context,&comment)
+	user.CommentOnPostService(context,comment)
+
+
 }

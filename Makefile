@@ -18,3 +18,7 @@ lint-fix:
 		&& echo "✔️  fixed without errors" \
 		|| (echo "⚠️️  you need to fix above issues manually" && exit 1)
 	@echo "⚠️️ run \"make lint-check\" again to check what did not fix yet"
+
+run:
+	clear
+	go run main.go

@@ -66,3 +66,23 @@ return ss
 
 
 }
+func DecodeToken(tokenString string) (*model.Claims,error){
+
+	fmt.Println("decode token called")
+	claims:=&model.Claims{}
+	//parse the token to get the claims 
+	token, err := jwt.ParseWithClaims(tokenString,claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte("secret"), nil
+	})
+	if err!=nil{
+		fmt.Println("err",err)
+	}
+	if claims, ok := token.Claims.(*model.Claims); ok && token.Valid {
+
+		return claims, nil
+	} else {
+		fmt.Println(ok)
+		return nil,err
+	}
+
+}

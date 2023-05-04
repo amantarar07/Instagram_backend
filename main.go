@@ -25,11 +25,15 @@ func main() {
 
 
 	//twilio
-
 	auth.TwilioInit(os.Getenv("TWILIO_AUTH_TOKEN"))
 
 	app := server.NewServer(connection)
 	server.ConfigureRoutes(app)
+
+	
+  
+   
+
 
 	if err := app.Run(os.Getenv("PORT")); err != nil {
 		log.Print(err)

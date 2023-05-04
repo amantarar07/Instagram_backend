@@ -2,14 +2,17 @@ package user
 
 import (
 	"fmt"
-	"io/ioutil"
 	"main/server/db"
 	"main/server/model"
 	"main/server/request"
 	"main/server/response"
 	"main/server/utils"
 	"net/http"
+	"os"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/gin-gonic/gin"
 )
 
@@ -115,6 +118,7 @@ func UserLoginService(context *gin.Context,credential request.LoginCred){
 				response.ShowResponse("server error", 500,err.Error(),"",context)
 			}
 			//give this user auth token
+			fmt.Println("userid ",user.User_Id)
 			var claims model.Claims
 			claims.ID=user.User_Id
 
@@ -147,6 +151,7 @@ func UserLoginService(context *gin.Context,credential request.LoginCred){
 			}
 			//give user a token
 			var claims model.Claims
+
 			claims.ID=user.User_Id
 
 			token :=utils.GenerateToken(claims)
@@ -169,36 +174,147 @@ func UserLoginService(context *gin.Context,credential request.LoginCred){
 
 }
 
-func UploadPostService(context *gin.Context ,filepath request.Filepath){
 
 
-	fmt.Println("File Upload Endpoint Hit")
 
-    // Parse our multipart form, 10 << 20 specifies a maximum
-    // upload of 10 MB files.
-    context.Request.ParseMultipartForm(1 << 50)
-    // FormFile returns the first file for the given key `myFile`
-    // it also returns the FileHeader so we can get the Filename,
-    // the Header and the size of the file
-    file, handler, err := context.Request.FormFile("myFile")
+
+
+
+func UploadPostService(c *gin.Context ){
+
+
+	
+	fmt.Println("upload image called")
+    sess := c.MustGet("sess").(*session.Session)
+    uploader := s3manager.NewUploader(sess)
+    MyBucket := os.Getenv("BUCKET_NAME")
+    fmt.Println("bucket",MyBucket)
+    file, header, err := c.Request.FormFile("file")
+    fmt.Println("file",file)
+    filename := header.Filename//upload to the s3 bucket
+    fmt.Println("filename",filename)
+
+    up, err := uploader.Upload(&s3manager.UploadInput{
+     Bucket: aws.String(MyBucket),
+     ACL:    aws.String("public-read"),
+     Key:    aws.String(filename),
+     Body:   file,
+    })
+    fmt.Println("error",err)
+
     if err != nil {
-        fmt.Println("Error Retrieving the File")
-        fmt.Println(err)
-        return
+     c.JSON(http.StatusInternalServerError, gin.H{
+      "error":    "Failed to upload file",
+      "uploader": up,
+     })
+     return
     }
-    defer file.Close()
-    fmt.Printf("Uploaded File: %+v\n", handler.Filename)
-    fmt.Printf("File Size: %+v\n", handler.Size)
-    fmt.Printf("MIME Header: %+v\n", handler.Header)
+    filepath := "https://" + MyBucket + "." + "s3-" + utils.MyRegion + ".amazonaws.com/" + filename
+    c.JSON(http.StatusOK, gin.H{
+     "filepath":    filepath,
+    })
 
-    // Create a temporary file within our temp-images directory that follows
-    // a particular naming pattern
-    tempFile, err := ioutil.TempFile("temp-images", "upload-*.png")
-    if err != nil {
-        fmt.Println(err)
-    }
-    defer tempFile.Close()
+	//add the post entry inside post table
+
+	var post model.Post
+	post.Title=filename
+	post.Path=filepath
+
+	//get the user id from the token 
+	
+	Cookie,_:=c.Request.Cookie("authToken")
+
+	fmt.Println("cookie",Cookie.Value)
+
+	claims,_:=utils.DecodeToken(Cookie.Value)
+
+	fmt.Println("claims",claims)
+	post.UserID=claims.ID
+	er:=db.CreateRecord(&post)
+	if er!=nil{
+
+		response.ShowResponse("server error",500,er.Error(),"",c)
+	}
+
+}
+
+func GetUserPostService(context *gin.Context){
+
+	//extract the userid from the auth token
+
+	cookie,_:=context.Request.Cookie("authToken")
+	claims,_:=utils.DecodeToken(cookie.Value)
+
+	query:="select * from posts where user_id='"+claims.ID+"';"
+	var userPosts []model.Post
+	db.QueryExecutor(query,&userPosts)
+
+	response.ShowResponse("success",200,"posts fetched successfully",userPosts,context)
+
+	
+}
+
+func LikePostService(context *gin.Context,post model.Post){
+
+
+	//get the user id of the user who like
+	cookie,_:=context.Request.Cookie("authToken")
+
+	claims,_:=utils.DecodeToken(cookie.Value)
+
+	var likepost model.Liked_Posts
+	likepost.PostID=post.PostID
+	likepost.Who_liked=claims.ID
+	er:=db.CreateRecord(&likepost)
+	if er!=nil{
+		response.ShowResponse("server error",500,er.Error(),"",context)
+		return
+	}
+
+	
+
+	//update the like count of the post
+	post.Likes+=1
+	db.UpdateRecord(&post,post.Likes,"likes")
+	response.ShowResponse("success",200,"post liked successfully","",context)
+
+
+}
+
+func CommentOnPostService(context *gin.Context,comment request.Comment){
+
+	//get the user id of the user who like
+	cookie,_:=context.Request.Cookie("authToken")
+
+	claims,_:=utils.DecodeToken(cookie.Value)
+
+	var comnt model.Comments
+	comnt.Comment=comment.Comment
+	comnt.UserID=claims.ID
+	comnt.PostID=comment.PostID
+	//create comment entry in db
+	err:=db.CreateRecord(&comnt)
+	if err!=nil{
+		response.ShowResponse("server error",500,err.Error(),"",context)
+		return
+	}
+	var commentedPost model.Post
+
+	commentedPost.Comment=append(commentedPost.Comment, comment.Comment)
+
+	query:="UPDATE posts SET comment=ARRAY_APPEND(comment,'"+comment.Comment+"') WHERE post_id='"+comment.PostID+"';"
+	er:=db.QueryExecutor(query,&commentedPost)
+	if er!=nil{
+		
+		response.ShowResponse("server error",500,er.Error(),"",context)
+		return
+	}
+
+	response.ShowResponse("success",200,"comment added successfully",commentedPost,context)
+
+	// commentOnPost.
 
 
 
 }
+
