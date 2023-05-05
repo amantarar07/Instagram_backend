@@ -2,7 +2,6 @@ package handler
 
 import (
 	"fmt"
-	"main/server/model"
 	"main/server/request"
 	"main/server/response"
 	auth "main/server/services/authentication"
@@ -142,12 +141,26 @@ func UserLoginHandler(context *gin.Context){
 
 
 }
+func SetUserBioHandler(context *gin.Context){
+
+	utils.SetHeader(context)
+
+	var bio request.Bio
+
+	utils.RequestDecoding(context,&bio)
+
+	user.SetUserBioService(context,bio)
+
+}
 
 func UploadPostHandler(context *gin.Context){
 
 	utils.SetHeader(context)
 
-	user.UploadPostService(context)
+	var caption request.Caption
+	utils.RequestDecoding(context,&caption)
+
+	user.UploadPostService(context,caption)
 
 	
 }
@@ -166,10 +179,10 @@ func LikePostHandler(context *gin.Context){
 
 	utils.SetHeader(context)
 
-	var post model.Post
-	utils.RequestDecoding(context,&post)
+	var like request.Like
+	utils.RequestDecoding(context,&like)
 
-	user.LikePostService(context,post)
+	user.LikePostService(context,like)
 }
 
 func Comment_on_PostHandler(context *gin.Context){
@@ -182,4 +195,26 @@ func Comment_on_PostHandler(context *gin.Context){
 	user.CommentOnPostService(context,comment)
 
 
+}
+
+func LikeCommentHandler(context *gin.Context){
+
+	utils.SetHeader(context)
+
+	var like request.Like
+	utils.RequestDecoding(context,&like)
+
+	user.LikeCommentService(context,like)
+}
+
+func FollwerUserHandler(context *gin.Context){
+
+
+	utils.SetHeader(context)
+
+	var otheruser request.User
+
+	utils.RequestDecoding(context,&otheruser)
+
+	user.FollowUserService(context,otheruser)
 }

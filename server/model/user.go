@@ -7,6 +7,7 @@ type User struct {
 	FullName string `gorm:"type:varchar(250);"`
 	UserName string `gorm:"type:varchar(250);"`
 	PhoneNumber string `json:"phonenumber"`
+	Bio 	 string  `json:"bio"`
 	IsActive string   `json:"is_active"`
 }
 

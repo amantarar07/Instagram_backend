@@ -50,6 +50,8 @@ func ConfigureRoutes(server *Server) {
 	server.engine.POST("/like-post",handler.LikePostHandler)
 
 	server.engine.POST("/comment-post",handler.Comment_on_PostHandler)
+
+	server.engine.POST("/like-comment",handler.LikeCommentHandler)
 	
 
 	

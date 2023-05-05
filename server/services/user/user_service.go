@@ -177,10 +177,54 @@ func UserLoginService(context *gin.Context,credential request.LoginCred){
 
 
 
+func SetUserBioService(context *gin.Context,bio request.Bio){
+
+
+		//extract the userid from the auth token
+
+		cookie,_:=context.Request.Cookie("authToken")
+		claims,_:=utils.DecodeToken(cookie.Value)
+
+		var user model.User
+
+		er:=db.FindById(&user,claims.ID,"user_id")
+	 	if er!=nil{
+			response.ShowResponse("server error", 500,er.Error(),"",context)
+			return
+		}
+		user.Bio=bio.Bio
+
+		//update the entry into the table
+
+		db.UpdateRecord(&user,claims.ID,"user_id")
+
+}
+
+func GetUserBioService(context *gin.Context){
+
+		//extract the userid from the auth token
+
+	cookie,_:=context.Request.Cookie("authToken")
+	claims,_:=utils.DecodeToken(cookie.Value)
+
+	var user model.User
+
+	er:=db.FindById(&user,claims.ID,"user_id")
+	if er!=nil{
+
+		response.ShowResponse("server error", 500,er.Error(),"",context)
+		return
+	}
+	response.ShowResponse("success",200,"Bio of user fetched successfully",user.Bio,context)
+
+
+}
 
 
 
-func UploadPostService(c *gin.Context ){
+
+
+func UploadPostService(c *gin.Context ,caption request.Caption){
 
 
 	
@@ -219,6 +263,7 @@ func UploadPostService(c *gin.Context ){
 	var post model.Post
 	post.Title=filename
 	post.Path=filepath
+	post.Caption=caption.CaptionText
 
 	//get the user id from the token 
 	
@@ -254,7 +299,7 @@ func GetUserPostService(context *gin.Context){
 	
 }
 
-func LikePostService(context *gin.Context,post model.Post){
+func LikePostService(context *gin.Context,Like request.Like){
 
 
 	//get the user id of the user who like
@@ -262,10 +307,10 @@ func LikePostService(context *gin.Context,post model.Post){
 
 	claims,_:=utils.DecodeToken(cookie.Value)
 
-	var likepost model.Liked_Posts
-	likepost.PostID=post.PostID
-	likepost.Who_liked=claims.ID
-	er:=db.CreateRecord(&likepost)
+	var like model.Like
+	like.PostID=Like.PostID
+	like.User_Id=claims.ID
+	er:=db.CreateRecord(&like)
 	if er!=nil{
 		response.ShowResponse("server error",500,er.Error(),"",context)
 		return
@@ -274,8 +319,10 @@ func LikePostService(context *gin.Context,post model.Post){
 	
 
 	//update the like count of the post
+	var post model.Post
+	db.FindById(&post,Like.PostID,"post_id")
 	post.Likes+=1
-	db.UpdateRecord(&post,post.Likes,"likes")
+	db.UpdateRecord(&post,Like.PostID,"post_id")
 	response.ShowResponse("success",200,"post liked successfully","",context)
 
 
@@ -288,8 +335,8 @@ func CommentOnPostService(context *gin.Context,comment request.Comment){
 
 	claims,_:=utils.DecodeToken(cookie.Value)
 
-	var comnt model.Comments
-	comnt.Comment=comment.Comment
+	var comnt model.Comment
+	comnt.CommentText=comment.Comment
 	comnt.UserID=claims.ID
 	comnt.PostID=comment.PostID
 	//create comment entry in db
@@ -298,19 +345,28 @@ func CommentOnPostService(context *gin.Context,comment request.Comment){
 		response.ShowResponse("server error",500,err.Error(),"",context)
 		return
 	}
-	var commentedPost model.Post
 
-	commentedPost.Comment=append(commentedPost.Comment, comment.Comment)
+	//update the comment count in the post table
 
-	query:="UPDATE posts SET comment=ARRAY_APPEND(comment,'"+comment.Comment+"') WHERE post_id='"+comment.PostID+"';"
-	er:=db.QueryExecutor(query,&commentedPost)
+	var post model.Post
+	er:=db.FindById(&post,comment.PostID,"post_id")
 	if er!=nil{
-		
 		response.ShowResponse("server error",500,er.Error(),"",context)
-		return
 	}
+	post.Comments+=1
 
-	response.ShowResponse("success",200,"comment added successfully",commentedPost,context)
+	db.UpdateRecord(&post,comment.PostID,"post_id")
+
+
+	// query:="UPDATE posts SET comment=ARRAY_APPEND(comment,'"+comment.Comment+"') WHERE post_id='"+comment.PostID+"';"
+	// er:=db.QueryExecutor(query,&commentedPost)
+	// if er!=nil{
+		
+	// 	response.ShowResponse("server error",500,er.Error(),"",context)
+	// 	return
+	// }
+
+	response.ShowResponse("success",200,"comment added successfully","",context)
 
 	// commentOnPost.
 
@@ -318,3 +374,63 @@ func CommentOnPostService(context *gin.Context,comment request.Comment){
 
 }
 
+
+func LikeCommentService(context *gin.Context,like request.Like){
+
+
+		//get the user id of the user who like
+		cookie,_:=context.Request.Cookie("authToken")
+
+		claims,_:=utils.DecodeToken(cookie.Value)
+
+		//create a like entry 
+
+		var like_on_comment model.Like
+		like_on_comment.User_Id=claims.ID
+		like_on_comment.CommentID=like.CommentID
+
+	
+		er:=db.CreateRecord(&like_on_comment)
+		if er!=nil{
+			response.ShowResponse("server error",500,er.Error(),"",context)
+			return
+		} 
+
+		var comnt model.Comment
+		err:=db.FindById(&comnt,like_on_comment.CommentID,"comment_id")
+		if err!=nil{
+			response.ShowResponse("server error",500,err.Error(),"",context)
+			return
+		} 
+		comnt.LikesCount+=1
+		err1:=db.UpdateRecord(&comnt,like_on_comment.CommentID,"comment_id").Error
+		if err1!=nil{
+
+			response.ShowResponse("server error",500,err1.Error(),"",context)
+		}
+
+		response.ShowResponse("success",200,"like on comment added successfully","",context)
+}
+
+func FollowUserService(context *gin.Context,Otheruser request.User){
+
+		//get the user id of the user who like
+		cookie,_:=context.Request.Cookie("authToken")
+
+		claims,_:=utils.DecodeToken(cookie.Value)
+
+		var follower model.Followers
+
+		follower.User_id=claims.ID
+		follower.FollowerOf=Otheruser.User_id
+
+		er:=db.CreateRecord(&follower)
+	   if er!=nil{
+
+		response.ShowResponse("server error",500,er.Error(),"",context)
+		return 
+	   }
+
+	   
+
+}
