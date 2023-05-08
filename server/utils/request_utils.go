@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"main/server/model"
 	"main/server/response"
+
 	"regexp"
 
 	"github.com/gin-gonic/gin"
@@ -86,3 +87,4 @@ func DecodeToken(tokenString string) (*model.Claims,error){
 	}
 
 }
+

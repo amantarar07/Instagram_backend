@@ -138,6 +138,10 @@ func UserLoginHandler(context *gin.Context){
 
 	user.UserLoginService(context,loginCred)
 
+	//give a jwt token to be used in headers for socket authentication
+
+	
+
 
 
 }

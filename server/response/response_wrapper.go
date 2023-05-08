@@ -1,7 +1,10 @@
 package response
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
+	socketio "github.com/googollee/go-socket.io"
 )
 
 type Error struct {
@@ -35,4 +38,22 @@ func ShowResponse(status string, statusCode int64, message string, data interfac
 
 func ErrorResponse(context *gin.Context, statusCode int, message string) {
 	Response(context, statusCode, Error{Code: statusCode, Message: message})
+}
+
+
+type SocketResp struct{
+
+	Message string `json:"message"`
+	Data  interface{} `json:"data"`
+}
+
+func SocketResponse(data interface{}, message string, s socketio.Conn) {
+	socketResponse := SocketResp{
+		Message: message,
+		Data:    data,
+	}
+	
+	s.Emit("ack", socketResponse, func() {
+		fmt.Println("acknowledgement sent to client")
+	})
 }

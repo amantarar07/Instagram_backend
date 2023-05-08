@@ -17,7 +17,7 @@ import (
 // }
 
 //Generate JWT Token
-func 	GenerateToken(claims model.Claims, context *gin.Context) string {
+func GenerateToken(claims model.Claims, context *gin.Context) string {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 

@@ -15,6 +15,7 @@ import (
 // @version 1.0
 // @description This is a demo version of Gin app.
 // @BasePath /
+
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
@@ -27,13 +28,11 @@ func main() {
 	//twilio
 	auth.TwilioInit(os.Getenv("TWILIO_AUTH_TOKEN"))
 
+
+
+
 	app := server.NewServer(connection)
 	server.ConfigureRoutes(app)
-
-	
-  
-   
-
 
 	if err := app.Run(os.Getenv("PORT")); err != nil {
 		log.Print(err)

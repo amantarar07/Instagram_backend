@@ -6,13 +6,13 @@ import (
 	"main/server/utils"
 
 	"github.com/gin-gonic/gin"
+	// socketio "github.com/googollee/go-socket.io"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func ConfigureRoutes(server *Server) {
 	
-
 	//aws connection
 	sess := utils.ConnectAws()
 
@@ -20,6 +20,11 @@ func ConfigureRoutes(server *Server) {
 		c.Set("sess", sess)
 		c.Next()
 	   })
+
+
+	go utils.SocketServerInstance.Serve()
+	handler.SocketHandler(utils.SocketServerInstance)	   
+	server.engine.GET("/socket.io/*any", gin.WrapH(utils.SocketServerInstance))   
 
 
 	server.engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -55,4 +60,6 @@ func ConfigureRoutes(server *Server) {
 	
 
 	
+
+
 }

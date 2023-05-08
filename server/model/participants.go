@@ -4,8 +4,7 @@ import "github.com/jinzhu/gorm"
 
 type Participants struct {
 	gorm.Model
-	RoomID int
-	Room   Room `gorm:"references:RoomID"`
-	UserID int
-	User   User `gorm:"references:UserID"`
+	RoomID string `json:"room_id"`
+	UserID string `json:"user_id"`
+	
 }

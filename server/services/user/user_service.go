@@ -105,7 +105,6 @@ func UserLoginService(context *gin.Context,credential request.LoginCred){
 
 	var user model.User
 	if utils.IsEmail(credential.Login_Input ){
-
 		db.FindById(&user,credential.Login_Input,"email")
 		if (utils.CheckPasswordHash(credential.Password,user.Password)){
 			fmt.Println("login successful")
@@ -118,15 +117,6 @@ func UserLoginService(context *gin.Context,credential request.LoginCred){
 				response.ShowResponse("server error", 500,err.Error(),"",context)
 			}
 			//give this user auth token
-			fmt.Println("userid ",user.User_Id)
-			var claims model.Claims
-			claims.ID=user.User_Id
-
-			token :=utils.GenerateToken(claims)
-
-			cookie:=&http.Cookie{Name:"authToken",Value:token}
-			http.SetCookie(context.Writer,cookie)
-
 			response.ShowResponse("success", 200,"login successful","",context)
 		}else{
 			fmt.Println("login failed")
@@ -136,8 +126,6 @@ func UserLoginService(context *gin.Context,credential request.LoginCred){
 
 	}else{
 
-
-		
 		db.FindById(&user,credential.Login_Input,"phone_number")
 
 		if (utils.CheckPasswordHash(credential.Password,user.Password)){
@@ -150,17 +138,6 @@ func UserLoginService(context *gin.Context,credential request.LoginCred){
 				response.ShowResponse("server error", 500,err.Error(),"",context)
 			}
 			//give user a token
-			var claims model.Claims
-
-			claims.ID=user.User_Id
-
-			token :=utils.GenerateToken(claims)
-
-			cookie:=&http.Cookie{Name:"authToken",Value:token}
-			http.SetCookie(context.Writer,cookie)
-			
-			response.ShowResponse("success", 200,"login successful","",context)
-			return
 		}else{
 			fmt.Println("login failed")
 			response.ShowResponse("Forbidden", 403,"Wrong credentials","",context)
@@ -170,8 +147,16 @@ func UserLoginService(context *gin.Context,credential request.LoginCred){
 
 
 	}
+	fmt.Println("userid ",user.User_Id)
+	var claims model.Claims
+	claims.Id=user.User_Id
 
+	token :=utils.GenerateToken(claims)
 
+	cookie:=&http.Cookie{Name:"authToken",Value:token}
+	http.SetCookie(context.Writer,cookie)
+
+	response.ShowResponse("success", 200,"login successful","",context)
 }
 
 
