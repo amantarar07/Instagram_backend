@@ -48,9 +48,9 @@ func QueryExecutor(query string, data interface{}, args ...interface{}) error {
 	return nil
 }
 
-func DeleteRecord(data interface{}, id interface{}, columName string) error {
+func DeleteRecord(dbVar interface{}, id interface{}, columName string) error {
 	column := columName + "=?"
-	result := db.Where(column, id).Delete(data)
+	result := db.Where(column, id).Delete(dbVar)
 	if result.Error != nil {
 		return result.Error
 	}

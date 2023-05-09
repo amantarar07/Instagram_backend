@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"main/server/db"
 	"main/server/model"
+	"main/server/response"
 	"main/server/utils"
 
 	socketio "github.com/googollee/go-socket.io"
@@ -33,6 +34,7 @@ func RoomCreate(s socketio.Conn,data map[string]string) {
 	s.Emit("createRoom",claims.Id+" :is connected to the room")
 
 
+
 	//update the participant table with roomid and user id
 
 	var participant model.Participants
@@ -42,8 +44,8 @@ func RoomCreate(s socketio.Conn,data map[string]string) {
 
 	db.CreateRecord(&participant)
 
-	s.Emit("createRoom","room created successfully")
-
+	// s.Emit("createRoom","room created successfully")
+	response.SocketResponse("Success","room created Successfully",s)
 
 	
 
