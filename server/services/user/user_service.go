@@ -406,8 +406,21 @@ func FollowUserService(context *gin.Context,Otheruser request.User){
 
 		var follower model.Followers
 
-		follower.User_id=claims.ID
+		follower.Follower=claims.Id
 		follower.FollowerOf=Otheruser.User_id
+
+		//check if already a following the same user
+
+		var exists bool
+
+		query:="select exists (select * from followers where follower='+"+claims.Id+"' and follower_of='+"+Otheruser.User_id+"');"
+
+		db.QueryExecutor(query,&exists)
+		if exists{
+
+			response.ShowResponse("Bad Request",400,"Already a following","",context)
+			return
+		}
 
 		er:=db.CreateRecord(&follower)
 	   if er!=nil{
@@ -416,6 +429,67 @@ func FollowUserService(context *gin.Context,Otheruser request.User){
 		return 
 	   }
 
+	   response.ShowResponse("success",200,"Successfully added to following","",context)
+
 	   
+
+}
+
+func Search (context *gin.Context,username request.User){
+
+
+
+	var users []model.User
+
+
+	query:="SELECT * FROM users WHERE LOWER(user_name) LIKE LOWER('"+username.Username+"%')UNION SELECT * FROM users WHERE LOWER(user_name) LIKE LOWER('%"+username.Username+"%')AND LOWER(user_name) NOT LIKE LOWER('"+username.Username+"%') ;"
+
+	db.QueryExecutor(query,&users)
+
+	if users!=nil{
+	response.ShowResponse("success",200,"match found ",users,context)
+	}else{
+
+		response.ShowResponse("server error",500,"match not found ",username,context)
+	}
+
+}
+
+func AddToCloseFriends(context *gin.Context,closeFriend request.User){
+
+
+	//check -->if already in closefriends list
+
+	//get the user id from the token inside cookie
+
+	cookie,_:=context.Request.Cookie("authToken")
+	claims,_:=utils.DecodeToken(cookie.Value)
+	var ifexists bool
+
+	query:="select exists(select * from close_friends where user_id='"+claims.Id+"' and closefriend_id='"+closeFriend.User_id+"');"
+
+	db.QueryExecutor(query,&ifexists)
+
+	if ifexists{
+
+		response.ShowResponse("bad request",400,"already a Closefriend","",context)
+	}else{
+
+		var closefrnd model.CloseFriends
+
+		closefrnd.User_id=claims.Id
+		closefrnd.CloseFriends_id=closeFriend.User_id
+
+		er:=db.CreateRecord(&closefrnd)
+	    if er!=nil{
+
+			response.ShowResponse("server error",500,er.Error(),"",context)
+		}else{
+
+			response.ShowResponse("success",200,"added to close friends","",context)
+		}
+	}
+
+
 
 }

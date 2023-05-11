@@ -11,10 +11,10 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// @title Gin Demo App
+// @title Instagram clone
 // @version 1.0
-// @description This is a demo version of Gin app.
-// @BasePath /
+// @description Social Media App
+// @BasePath /localhost:3000
 
 func main() {
 	if err := godotenv.Load(); err != nil {

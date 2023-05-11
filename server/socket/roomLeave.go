@@ -13,13 +13,13 @@ import (
 func RoomLeave(s socketio.Conn,data map[string]string){
 
 
-
+	var participant model.Participants
 	roomId := data["room_id"]
 	s.Leave(roomId)
 
 	token:=s.RemoteHeader().Get("authToken")
 	claims,_:=utils.DecodeToken(token)
-	var participant model.Participants
+	
 	
   //check if exists in participants table
 	var ifExists bool

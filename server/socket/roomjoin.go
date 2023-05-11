@@ -1,6 +1,7 @@
 package socket
 
 import (
+	"fmt"
 	"main/server/db"
 	"main/server/model"
 	"main/server/response"
@@ -11,7 +12,7 @@ import (
 
 func Roomjoin(s socketio.Conn,data map[string]string){
 
-
+	var participant model.Participants
 	roomId:=data["room_id"]
 	if roomId == "" {
 		response.SocketResponse(
@@ -38,6 +39,7 @@ func Roomjoin(s socketio.Conn,data map[string]string){
 	var Exists bool
 	query:="select exists(select * from participants where user_id ='"+ data["user_id"] + "'and room_id='"+data["room_id"]+"');"
 	db.QueryExecutor(query,&Exists)
+	fmt.Println("exists in room ",Exists)
 	if Exists{
 
 		//show the past messages in the room
@@ -47,7 +49,7 @@ func Roomjoin(s socketio.Conn,data map[string]string){
 		return
 	}
 
-	var participant model.Participants
+	
 
 	participant.UserID=data["user_id"]
 	participant.RoomID=roomId

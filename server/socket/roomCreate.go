@@ -11,9 +11,11 @@ import (
 )
 
 func RoomCreate(s socketio.Conn,data map[string]string) {
-	fmt.Println("inside room creation process...")
+	// fmt.Println("inside room creation process...")
 	// Get the user ID from the query params
-
+	var room model.Room
+	var participant model.Participants
+	
 	headerToken:=s.RemoteHeader().Get("authToken")
 	claims,err:=utils.DecodeToken(headerToken)
 	if err!=nil{
@@ -25,7 +27,7 @@ func RoomCreate(s socketio.Conn,data map[string]string) {
 	// s.Emit("hello","hi there")
 	// utils.SocketServerInstance.BroadcastToNamespace("/","reply",data["message"])
 
-	var room model.Room
+	
 	room.Creator=claims.Id
 	room.Name=data["name"]
 	db.CreateRecord(&room)
@@ -37,7 +39,7 @@ func RoomCreate(s socketio.Conn,data map[string]string) {
 
 	//update the participant table with roomid and user id
 
-	var participant model.Participants
+	
 
 	participant.RoomID=room.RoomID
 	participant.UserID=claims.Id

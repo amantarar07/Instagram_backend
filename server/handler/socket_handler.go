@@ -28,6 +28,7 @@ func SocketHandler(server *socketio.Server) {
 	 server.OnEvent("/","createRoom",socket.RoomCreate)
 	 server.OnEvent("/","JoinRoom", socket.Roomjoin)
 	 server.OnEvent("/","msg",socket.Messaging)
+	 server.OnEvent("/","Filemessage", socket.SendFileMessage)
 	 server.OnEvent("/","typing",socket.Typing)
 	 server.OnEvent("/","LeaveRoom",socket.RoomLeave)
 }

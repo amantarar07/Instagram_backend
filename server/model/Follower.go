@@ -3,8 +3,8 @@ package model
 
 type Followers struct{
 
-	User_id string `json:"user_id"`
-	FollowerOf  string `json:"follower"`
+	Follower string `json:"follower"`
+	FollowerOf  string `json:"followerof"`
 
 }
 

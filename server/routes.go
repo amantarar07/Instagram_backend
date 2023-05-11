@@ -57,9 +57,20 @@ func ConfigureRoutes(server *Server) {
 	server.engine.POST("/comment-post",handler.Comment_on_PostHandler)
 
 	server.engine.POST("/like-comment",handler.LikeCommentHandler)
-	
 
+//Explore related routes
+	server.engine.GET("/search",handler.SearchHandler) 
 	
+	server.engine.GET("/refresh",handler.RefreshHandler)
+	
+//follower other users
+
+	server.engine.POST("/follow",handler.FollwerUserHandler)
+//close friends 
+
+	server.engine.POST("/add-to-closefriends",handler.AddToCloseFriendsHandler)   
+
+
 
 
 }

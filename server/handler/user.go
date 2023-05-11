@@ -157,59 +157,6 @@ func SetUserBioHandler(context *gin.Context){
 
 }
 
-func UploadPostHandler(context *gin.Context){
-
-	utils.SetHeader(context)
-
-	var caption request.Caption
-	utils.RequestDecoding(context,&caption)
-
-	user.UploadPostService(context,caption)
-
-	
-}
-
-func GetUserPostsHandler(context *gin.Context){
-
-	utils.SetHeader(context)
-	
-	user.GetUserPostService(context)
-	
-
-	
-}
-
-func LikePostHandler(context *gin.Context){
-
-	utils.SetHeader(context)
-
-	var like request.Like
-	utils.RequestDecoding(context,&like)
-
-	user.LikePostService(context,like)
-}
-
-func Comment_on_PostHandler(context *gin.Context){
-
-
-	utils.SetHeader(context)
-
-	var comment request.Comment
-	utils.RequestDecoding(context,&comment)
-	user.CommentOnPostService(context,comment)
-
-
-}
-
-func LikeCommentHandler(context *gin.Context){
-
-	utils.SetHeader(context)
-
-	var like request.Like
-	utils.RequestDecoding(context,&like)
-
-	user.LikeCommentService(context,like)
-}
 
 func FollwerUserHandler(context *gin.Context){
 
@@ -221,4 +168,16 @@ func FollwerUserHandler(context *gin.Context){
 	utils.RequestDecoding(context,&otheruser)
 
 	user.FollowUserService(context,otheruser)
+}
+
+
+func AddToCloseFriendsHandler(context *gin.Context){
+
+
+	utils.SetHeader(context)
+	var closeFriend request.User
+
+	utils.RequestDecoding(context,&closeFriend)
+
+	user.AddToCloseFriends(context,closeFriend)
 }

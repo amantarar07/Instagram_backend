@@ -12,7 +12,7 @@ import (
 
 func Messaging(s socketio.Conn,data map[string]string){
 
-
+	var message model.Message
 	//room_id from data 
 	//user_id from token in header
 	fmt.Println("messaging function called")
@@ -22,7 +22,7 @@ func Messaging(s socketio.Conn,data map[string]string){
 	claims,_:=utils.DecodeToken(token)
 
 	
-	var message model.Message
+	
 
 	message.Room_id=roomId
 	message.Sender_id=claims.Id
@@ -41,3 +41,24 @@ func Messaging(s socketio.Conn,data map[string]string){
 
 
 }
+
+func SendFileMessage(s socketio.Conn,room map[string]string){
+
+
+	var file model.Files
+	headerToken:=s.RemoteHeader().Get("auth")
+
+	
+	claims,_:=utils.DecodeToken(headerToken)
+	// query:="select * from files where user_id='"+claims.Id+"' order by created_at LIMIT 1;"
+	query:="select * from posts where user_id='"+claims.Id+"' order by created_at LIMIT 1;"
+
+
+
+	db.QueryExecutor(query,&file)
+
+	utils.SocketServerInstance.BroadcastToRoom("/",room["room_id"],"message",file.Path)
+	
+
+
+}        
