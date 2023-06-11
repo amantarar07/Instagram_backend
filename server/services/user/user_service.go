@@ -117,7 +117,7 @@ func UserLoginService(context *gin.Context,credential request.LoginCred){
 				response.ShowResponse("server error", 500,err.Error(),"",context)
 			}
 			//give this user auth token
-			response.ShowResponse("success", 200,"login successful","",context)
+			// response.ShowResponse("success", 200,"login successful","",context)
 		}else{
 			fmt.Println("login failed")
 			response.ShowResponse("Forbidden", 403,"Wrong credentials","",context)
@@ -219,6 +219,10 @@ func UploadPostService(c *gin.Context ,caption request.Caption){
     MyBucket := os.Getenv("BUCKET_NAME")
     fmt.Println("bucket",MyBucket)
     file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		fmt.Println("error",err.Error())
+
+	}
     fmt.Println("file",file)
     filename := header.Filename//upload to the s3 bucket
     fmt.Println("filename",filename)
